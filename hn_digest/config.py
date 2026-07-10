@@ -33,11 +33,16 @@ class Settings:
     hn_showhn_count: int
     hn_min_points: int
     hn_lookback_hours: int
+    enrich_top_n: int
     seen_path: Path
     seen_ttl_days: int
+    usage_path: Path
+    schedule_hour: int
+    schedule_minute: int
+    run_window_minutes: int
 
     @classmethod
-    def from_env(cls) -> "Settings":
+    def from_env(cls) -> Settings:
         load_env()
         return cls(
             telegram_bot_token=os.environ.get("TELEGRAM_BOT_TOKEN", "").strip(),
@@ -48,14 +53,17 @@ class Settings:
             hn_showhn_count=int(os.environ.get("HN_SHOWHN_COUNT", "30")),
             hn_min_points=int(os.environ.get("HN_MIN_POINTS", "20")),
             hn_lookback_hours=int(os.environ.get("HN_LOOKBACK_HOURS", "36")),
-            seen_path=Path(
-                os.environ.get("SEEN_PATH", str(PROJECT_ROOT / "state" / "seen.json"))
-            ),
+            enrich_top_n=int(os.environ.get("ENRICH_TOP_N", "25")),
+            seen_path=Path(os.environ.get("SEEN_PATH", str(PROJECT_ROOT / "state" / "seen.json"))),
             seen_ttl_days=int(os.environ.get("SEEN_TTL_DAYS", "30")),
+            usage_path=Path(
+                os.environ.get("USAGE_PATH", str(PROJECT_ROOT / "state" / "usage.jsonl"))
+            ),
+            schedule_hour=int(os.environ.get("SCHEDULE_HOUR", "9")),
+            schedule_minute=int(os.environ.get("SCHEDULE_MINUTE", "0")),
+            run_window_minutes=int(os.environ.get("RUN_WINDOW_MINUTES", "90")),
         )
 
     def require_telegram(self) -> None:
         if not self.telegram_bot_token or not self.telegram_chat_id:
-            raise SystemExit(
-                "Не заданы TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID (см. .env)."
-            )
+            raise SystemExit("Не заданы TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID (см. .env).")

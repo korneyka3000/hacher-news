@@ -1,0 +1,81 @@
+# Быстрые команды проекта. Требуется go-task: brew install go-task
+# Запуск: `task <имя>` (без аргумента — список: `task --list`).
+version: "3"
+
+vars:
+  PLIST: com.korney.hndigest.plist
+  AGENT: '{{.HOME}}/Library/LaunchAgents/com.korney.hndigest.plist'
+
+tasks:
+  default:
+    desc: Список доступных команд
+    cmds:
+      - task --list
+    silent: true
+
+  run:
+    desc: Боевой прогон — постит в Telegram и запоминает отправленное
+    cmds:
+      - uv run python -m hn_digest
+
+  dry:
+    desc: Тестовый прогон без отправки (~5 постов, печатает в консоль)
+    cmds:
+      - HN_FRONTPAGE_COUNT=5 HN_SHOWHN_COUNT=0 uv run python -m hn_digest --dry-run
+
+  test:
+    desc: Юнит-тесты (чистая логика, без сети/claude/telegram)
+    cmds:
+      - uv run pytest
+
+  lint:
+    desc: Линтер ruff (с автофиксом)
+    cmds:
+      - uv run ruff check --fix .
+
+  fmt:
+    desc: Форматирование кода ruff
+    cmds:
+      - uv run ruff format .
+
+  typecheck:
+    desc: Проверка типов (ty)
+    cmds:
+      - uv run ty check
+
+  check:
+    desc: Полный прогон гейта — линт, формат, типы, тесты
+    cmds:
+      - uv run ruff check .
+      - uv run ruff format --check .
+      - uv run ty check
+      - uv run pytest
+
+  health:
+    desc: Самопроверка окружения (claude, креды, каталог state)
+    cmds:
+      - uv run python -m hn_digest --health
+
+  usage:
+    desc: Сводка расхода токенов/цены курации (state/usage.jsonl)
+    cmds:
+      - uv run python -m hn_digest.usage_report
+
+  install:
+    desc: Поставить автозапуск в 9:00 (launchd)
+    cmds:
+      - cp {{.PLIST}} {{.AGENT}}
+      - launchctl unload {{.AGENT}} 2>/dev/null || true
+      - launchctl load {{.AGENT}}
+      - launchctl list | grep hndigest || true
+
+  uninstall:
+    desc: Убрать автозапуск
+    cmds:
+      - launchctl unload {{.AGENT}} 2>/dev/null || true
+      - rm -f {{.AGENT}}
+
+  logs:
+    desc: Хвост логов launchd
+    cmds:
+      - tail -f hn_digest.log hn_digest.err

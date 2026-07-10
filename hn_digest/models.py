@@ -37,7 +37,7 @@ class CuratedItem:
     num_comments: int = 0
 
     @classmethod
-    def from_claude(cls, raw: dict, story: Story | None) -> "CuratedItem":
+    def from_claude(cls, raw: dict, story: Story | None) -> CuratedItem:
         """Собирает элемент из ответа Claude + данных исходной истории."""
         return cls(
             id=str(raw.get("id", "")),

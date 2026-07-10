@@ -7,4 +7,6 @@ set -euo pipefail
 export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
 
 cd "$(dirname "$0")"
-exec uv run python -m hn_digest "$@"
+# --scheduled включает гард окна запуска: если Mac спал и проснулся сильно позже
+# 9:00, прогон тихо пропускается (поздняя выжимка не нужна).
+exec uv run python -m hn_digest --scheduled "$@"

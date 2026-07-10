@@ -49,9 +49,7 @@ class SeenStore:
 
     def _prune(self, now: float) -> None:
         before = len(self._seen)
-        self._seen = {
-            k: ts for k, ts in self._seen.items() if now - ts <= self.ttl_seconds
-        }
+        self._seen = {k: ts for k, ts in self._seen.items() if now - ts <= self.ttl_seconds}
         removed = before - len(self._seen)
         if removed:
             log.info("Убрано протухших записей (> TTL): %s", removed)
