@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.korney.hndigest</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/korney.burau/PyProjects/hacker-news/run.sh</string>
+    </array>
+
+    <!-- Запуск каждый день в 9:00 -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>9</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <!-- Если Mac спал в 9:00 — запустить при пробуждении -->
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/korney.burau/PyProjects/hacker-news/hn_digest.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/korney.burau/PyProjects/hacker-news/hn_digest.err</string>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/korney.burau/PyProjects/hacker-news</string>
+</dict>
+</plist>

@@ -1,0 +1,22 @@
+[project]
+name = "hn-digest"
+version = "0.2.0"
+description = "Утренний IT-дайджест из Hacker News в Telegram (курация через Claude Code)"
+requires-python = ">=3.10"
+dependencies = [
+    "httpx>=0.27",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+]
+
+[tool.uv]
+# Это приложение, а не библиотека — не собираем/не устанавливаем сам проект,
+# uv только поднимает окружение с зависимостями. Запуск: `uv run python -m hn_digest`.
+package = false
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

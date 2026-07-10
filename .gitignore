@@ -1,0 +1,7 @@
+.env
+__pycache__/
+*.pyc
+state/
+hn_digest.log
+hn_digest.err
+.venv/
