@@ -6,17 +6,19 @@
 
 from __future__ import annotations
 
+import asyncio
 import os
 import subprocess
 import sys
 import traceback
-from datetime import datetime
+from datetime import date, datetime
 
 from .config import Settings
 from .curation import curate
 from .dedup import SeenStore
-from .formatting import build_messages
+from .formatting import build_messages, build_notification
 from .logging_setup import get_logger, setup_logging
+from .models import CuratedItem
 from .scheduling import is_within_window
 from .sources import enrich_links, fetch_candidates
 from .telegram import TelegramClient
@@ -67,10 +69,53 @@ def run(dry_run: bool = False, scheduled: bool = False) -> None:
         return
 
     settings.require_telegram()
-    client = TelegramClient(settings.telegram_bot_token, settings.telegram_chat_id)
-    client.send_all(messages)
-    # Помечаем отправленным только то, что реально ушло.
+    # Сохраняем выпуск в БД — бот читает именно отсюда.
+    _persist_digest(settings, items)
+    # Помечаем обработанным, чтобы истории не всплыли в будущих выпусках.
     seen.mark_sent(items)
+    # Вместо стены текста — короткий пинг со ссылкой в карточки бота.
+    _notify_subscribers(settings, items)
+
+
+def _notify_subscribers(settings: Settings, items: list[CuratedItem]) -> None:
+    """Шлёт каждому из whitelist короткое уведомление с кнопкой «Открыть» в бот."""
+    if not items or not settings.bot_allowed_user_ids:
+        return
+    client = TelegramClient(settings.telegram_bot_token, settings.telegram_chat_id)
+    try:
+        username = client.get_username()
+    except Exception:  # noqa: BLE001 — без username deep-link не собрать
+        log.warning("getMe не удался — уведомления не отправлены.", exc_info=True)
+        return
+    text, markup = build_notification(date.today(), items, username)
+    for uid in settings.bot_allowed_user_ids:
+        try:
+            client.send(text, chat_id=uid, reply_markup=markup)
+            log.info("Уведомление доставлено user_id=%s", uid)
+        except Exception:  # noqa: BLE001 — напр. пользователь не нажал Start (403)
+            log.warning("Уведомление не доставлено user_id=%s", uid, exc_info=True)
+
+
+def _persist_digest(settings: Settings, items: list[CuratedItem]) -> None:
+    """Пишет отобранные истории в Postgres как выпуск за сегодня (best-effort)."""
+    if not settings.database_url or not items:
+        return
+    from .db import make_engine, make_sessionmaker, repo
+
+    async def _run() -> None:
+        engine = make_engine(settings.database_url)
+        try:
+            sessionmaker = make_sessionmaker(engine)
+            async with sessionmaker() as session, session.begin():
+                await repo.insert_digest(session, items, date.today())
+        finally:
+            await engine.dispose()
+
+    try:
+        asyncio.run(_run())
+        log.info("В БД сохранён выпуск за %s: %d историй.", date.today(), len(items))
+    except Exception:  # noqa: BLE001 — БД не должна ронять доставку
+        log.warning("Не удалось сохранить выпуск в БД (пропускаю).", exc_info=True)
 
 
 def health_check() -> bool:

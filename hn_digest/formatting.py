@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import html
-from datetime import datetime
+from datetime import date, datetime
 
 from .models import CuratedItem
 
@@ -11,6 +11,31 @@ TELEGRAM_LIMIT = 4096
 SAFE_CHUNK = 3900  # с запасом под лимит Telegram
 SEP = "────────────"  # разделитель между историями
 EMPTY_NOTE = "Сегодня ничего нового и стоящего не нашлось — бывает. Завтра новый заход. 🙂"
+NOTIFY_TEASER_N = 3  # сколько заголовков показать тизером в уведомлении
+
+
+def build_notification(
+    digest_date: date, items: list[CuratedItem], bot_username: str
+) -> tuple[str, dict]:
+    """Короткое уведомление о новом выпуске + inline-кнопка deep-link в бот.
+
+    Возвращает (HTML-текст, reply_markup) для Telegram sendMessage.
+    """
+    day = digest_date.strftime("%d.%m.%Y")
+    lines = [f"🗞 <b>Новый HN-дайджест — {day}</b>", f"Отобрано историй: {len(items)}"]
+    teaser = [f"• {_esc(it.title_ru)}" for it in items[:NOTIFY_TEASER_N] if it.title_ru]
+    if teaser:
+        lines.append("")
+        lines.extend(teaser)
+        if len(items) > NOTIFY_TEASER_N:
+            lines.append(f"…и ещё {len(items) - NOTIFY_TEASER_N}")
+    text = "\n".join(lines)
+    reply_markup = {
+        "inline_keyboard": [
+            [{"text": "📖 Открыть", "url": f"https://t.me/{bot_username}?start=latest"}]
+        ]
+    }
+    return text, reply_markup
 
 
 def build_messages(items: list[CuratedItem]) -> list[str]:

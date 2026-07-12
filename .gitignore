@@ -5,3 +5,8 @@ state/
 hn_digest.log
 hn_digest.err
 .venv/
+.fastapicloud/
+.claude/
+.agents/
+.pytest_cache/
+.ruff_cache/

@@ -61,6 +61,27 @@ tasks:
     cmds:
       - uv run python -m hn_digest.usage_report
 
+  # ── Бот + БД (Neon) ──────────────────────────────────────────────
+  bot:dev:
+    desc: Локальный запуск бота в polling-режиме (для разработки)
+    cmds:
+      - uv run python -m hn_digest.bot
+
+  bot:serve:
+    desc: Локальный webhook-сервер (uvicorn) — для проверки через ngrok
+    cmds:
+      - uv run uvicorn hn_digest.bot.main:app --host 0.0.0.0 --port 8080
+
+  db:migrate:
+    desc: Применить миграции БД (alembic upgrade head)
+    cmds:
+      - uv run alembic upgrade head
+
+  db:revision:
+    desc: 'Сгенерировать миграцию из моделей: task db:revision -- "сообщение"'
+    cmds:
+      - uv run alembic revision --autogenerate -m "{{.CLI_ARGS}}"
+
   install:
     desc: Поставить автозапуск в 9:00 (launchd)
     cmds:
